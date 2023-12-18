@@ -6,6 +6,18 @@ std::shared_ptr<SDL::pixelMap> SDL::pixelMapping = std::make_shared<pixelMap>();
 uint16_t SDL::nModules;
 uint16_t SDL::nLowerModules;
 
+// example of bad formatted code
+    void   badFormat()
+  {   int    a =   3;
+printf("%i\n", a);
+}
+
+// example of code with issues that clang-tidy should flag
+void badCode() {
+  int *a = 0;
+  printf("%i\n", *a);
+}
+
 void SDL::Event::init(bool verbose) {
   addObjects = verbose;
   hitsInGPU = nullptr;
