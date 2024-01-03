@@ -4,6 +4,12 @@
 #include "Constants.h"
 #include "Module.h"
 
+// example of code with issues that clang-tidy should flag
+void badCode() {
+  int *a = 0;
+  printf("%i\n", *a);
+}
+
 namespace SDL {
   struct hits {
     unsigned int* nHits;
