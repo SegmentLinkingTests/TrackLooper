@@ -12,6 +12,12 @@
 #include "TrackCandidate.h"
 #include "Constants.h"
 
+// example of code with issues that clang-tidy should flag
+void badCode() {
+  int *a = 0;
+  printf("%i\n", *a);
+}
+
 namespace SDL {
   class Event {
   private:
