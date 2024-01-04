@@ -29,7 +29,7 @@ jobs:
         working-directory: ./SDL
         run: |
           pip install compiledb compdb
-          make BACKEND=cpu -Bnwk > build_log.txt
+          make BACKEND=cpu explicit -Bnwk > build_log.txt
           compiledb < build_log.txt
           # This extra step is needed to generate compilation commands for headers
           compdb list > compile_commands_new.json
@@ -38,9 +38,6 @@ jobs:
           cd ..
           source setup.sh 1> /dev/null 2> /dev/null
           INCLUDE_FLAGS="-I$TRACKLOOPERDIR -I$BOOST_ROOT/include -I$ALPAKA_ROOT/include -I$CUDA_HOME/include -I$ROOT_ROOT/include -I$CMSSW_BASE/src"
-          # INCLUDE_FLAGS="$INCLUDE_FLAGS -I/cvmfs/cms.cern.ch/el8_amd64_gcc11/external/gcc/11.4.1-30ebdc301ebd200f2ae0e3d880258e65/include/c++/11.4.1"
-          # INCLUDE_FLAGS="$INCLUDE_FLAGS -I/cvmfs/cms.cern.ch/el8_amd64_gcc11/external/gcc/11.4.1-30ebdc301ebd200f2ae0e3d880258e65/include/c++/11.4.1/x86_64-redhat-linux-gnu/"
-          # INCLUDE_FLAGS="$INCLUDE_FLAGS -I/cvmfs/cms.cern.ch/el8_amd64_gcc11/external/gcc/11.4.1-30ebdc301ebd200f2ae0e3d880258e65/lib/gcc/x86_64-redhat-linux-gnu/11.4.1/include"
           echo "include-flags=$INCLUDE_FLAGS" >> $GITHUB_ENV
       - name: Run linter
         uses: cpp-linter/cpp-linter-action@v2
