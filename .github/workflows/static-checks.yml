@@ -33,7 +33,7 @@ jobs:
           compiledb < build_log.txt
           # This extra step is needed to generate compilation commands for headers
           compdb list > compile_commands_new.json
-          mv compile_commands_new.json > compile_commands.json
+          mv compile_commands_new.json compile_commands.json
           # Now we gather some include paths since the compiler is not fully configured to find all the headers.
           source setup.sh 1> /dev/null 2> /dev/null
           INCLUDE_FLAGS="-I$TRACKLOOPERDIR -I$BOOST_ROOT/include -I$ALPAKA_ROOT/include -I$CUDA_HOME/include -I$ROOT_ROOT/include -I$CMSSW_BASE/src"
