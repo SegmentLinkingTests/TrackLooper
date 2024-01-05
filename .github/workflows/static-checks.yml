@@ -27,7 +27,8 @@ jobs:
           python-version: '3.11'
       - name: Generate compilation database
         run: |
-          # There are some errors when running the script, but we only need it to set up some environment variables
+          # There are some errors when running the script, but they don't affect anything important.
+          # We only need to run it to set up some environment variables, so we suppress the output.
           source setup.sh 1> /dev/null 2> /dev/null
           pip install compiledb compdb
           cd SDL
@@ -49,7 +50,8 @@ jobs:
           thread-comments: true
           # only use checks in .clang-tidy file
           tidy-checks: ''
-          lines-changed-only: true
+          lines-changed-only: false
+          files-changed-only: false
           ignore: .github|bin|code|data|efficiency
           extra-args: '-U_OPENMP -ferror-limit=0 ${{ env.include-flags }}'
       - name: Fail job if there were checks that failed
