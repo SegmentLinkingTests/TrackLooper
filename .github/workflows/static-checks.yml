@@ -53,3 +53,4 @@ jobs:
       - name: Fail job if there were checks that failed
         if: steps.linter.outputs.checks-failed > 0
         run: exit 1
+        
