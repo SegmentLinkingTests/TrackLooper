@@ -26,19 +26,19 @@ jobs:
         with:
           python-version: '3.11'
       - name: Generate compilation database
-        working-directory: ./SDL
         run: |
+          # There are some errors when running the script, but we only need it to set up some environment variables
+          source setup.sh 1> /dev/null 2> /dev/null
           pip install compiledb compdb
+          cd SDL
           make BACKEND=cpu explicit -Bnwk > build_log.txt
           compiledb < build_log.txt
           # This extra step is needed to generate compilation commands for headers
           compdb list > compile_commands_new.json
           mv compile_commands_new.json compile_commands.json
           # Now we gather some include paths since the compiler is not fully configured to find all the headers.
-          cd ..
-          source setup.sh 1> /dev/null 2> /dev/null
-          INCLUDE_FLAGS="-I$TRACKLOOPERDIR -I$BOOST_ROOT/include -I$ALPAKA_ROOT/include -I$CUDA_HOME/include -I$ROOT_ROOT/include -I$CMSSW_BASE/src"
-          echo "include-flags=$INCLUDE_FLAGS" >> $GITHUB_ENV
+          # INCLUDE_FLAGS="-I$TRACKLOOPERDIR -I$BOOST_ROOT/include -I$ALPAKA_ROOT/include -I$CUDA_HOME/include -I$ROOT_ROOT/include -I$CMSSW_BASE/src"
+          # echo "include-flags=$INCLUDE_FLAGS" >> $GITHUB_ENV
       - name: Run linter
         uses: cpp-linter/cpp-linter-action@v2
         id: linter
