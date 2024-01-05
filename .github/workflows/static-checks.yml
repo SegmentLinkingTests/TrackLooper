@@ -50,10 +50,9 @@ jobs:
           thread-comments: true
           # only use checks in .clang-tidy file
           tidy-checks: ''
-          lines-changed-only: false
-          files-changed-only: false
+          lines-changed-only: true
           ignore: .github|bin|code|data|efficiency
-          extra-args: '-U_OPENMP -ferror-limit=0 ${{ env.include-flags }}'
+          extra-args: '-ferror-limit=0 ${{ env.include-flags }}'
       - name: Fail job if there were checks that failed
         if: steps.linter.outputs.checks-failed > 0
         run: exit 1
