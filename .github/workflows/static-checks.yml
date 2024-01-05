@@ -37,9 +37,6 @@ jobs:
           # This extra step is needed to generate compilation commands for headers
           compdb list > compile_commands_new.json
           mv compile_commands_new.json compile_commands.json
-          # Now we gather some include paths since the compiler is not fully configured to find all the headers.
-          # INCLUDE_FLAGS="-I$TRACKLOOPERDIR -I$BOOST_ROOT/include -I$ALPAKA_ROOT/include -I$CUDA_HOME/include -I$ROOT_ROOT/include -I$CMSSW_BASE/src"
-          # echo "include-flags=$INCLUDE_FLAGS" >> $GITHUB_ENV
       - name: Run linter
         uses: cpp-linter/cpp-linter-action@v2
         id: linter
@@ -52,7 +49,7 @@ jobs:
           tidy-checks: ''
           lines-changed-only: true
           ignore: .github|bin|code|data|efficiency
-          extra-args: '-ferror-limit=0 ${{ env.include-flags }}'
+          extra-args: '-U_OPENMP -ferror-limit=0'
       - name: Fail job if there were checks that failed
         if: steps.linter.outputs.checks-failed > 0
         run: exit 1
