@@ -48,7 +48,8 @@ jobs:
           thread-comments: true
           # only use checks in .clang-tidy file
           tidy-checks: ''
-          lines-changed-only: true
+          lines-changed-only: false
+          files-changed-only: false
           ignore: .github|bin|code|data|efficiency
           extra-args: '-U_OPENMP -ferror-limit=0'
       - name: Fail job if there were checks that failed
