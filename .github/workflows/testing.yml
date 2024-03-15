@@ -48,7 +48,7 @@ jobs:
       - name: Build and run PR
         timeout-minutes: 60
         id: build-and-run
-        uses: SegmentLinkingTests/TrackLooper-actions/standalone@main
+        uses: SegmentLinkingTests/TrackLooper-actions/standalone@working_version
         with:
           pr-number: ${{ github.event.issue.number }}
       - name: Upload plots to archival repo
@@ -153,7 +153,7 @@ jobs:
       - name: Build and run PR
         timeout-minutes: 200
         id: build-and-run
-        uses: SegmentLinkingTests/TrackLooper-actions/cmssw@main
+        uses: SegmentLinkingTests/TrackLooper-actions/cmssw@working_version
         with:
           pr-number: ${{ github.event.issue.number }}
           cmssw-branch: ${{ env.cmssw-branch }}
