@@ -428,7 +428,7 @@ namespace SDL {
         nPixelSegments = N_MAX_PIXEL_SEGMENTS_PER_MODULE;
 
       for (unsigned int ix = globalThreadIdx[1]; ix < nPixelSegments; ix += gridThreadExtent[1]) {
-        if (secondpass && (!segmentsInGPU.isQuad[ix] || (segmentsInGPU.isDup[ix] & 1)))
+        if (true && (!segmentsInGPU.isQuad[ix] || (segmentsInGPU.isDup[ix] & 1)))
           continue;
 
         unsigned int phits1[4];
