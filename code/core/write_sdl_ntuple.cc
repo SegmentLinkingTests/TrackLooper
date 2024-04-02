@@ -8,7 +8,7 @@ void createOutputBranches()
 }
 
 //________________________________________________________________________________________________________________________________
-void fillOutputBranches(SDL::Event* event)
+void fillOutputBranches(SDL::Event<SDL::Acc>* event)
 {
     setOutputBranches(event);
     setOptionalOutputBranches(event);
@@ -186,7 +186,7 @@ void createGnnNtupleBranches()
 }
 
 //________________________________________________________________________________________________________________________________
-void setOutputBranches(SDL::Event* event)
+void setOutputBranches(SDL::Event<SDL::Acc>* event)
 {
 
     // ============ Sim tracks =============
@@ -290,7 +290,7 @@ void setOutputBranches(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void setOptionalOutputBranches(SDL::Event* event)
+void setOptionalOutputBranches(SDL::Event<SDL::Acc>* event)
 {
 #ifdef CUT_VALUE_DEBUG
 
@@ -302,7 +302,7 @@ void setOptionalOutputBranches(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void setPixelQuintupletOutputBranches(SDL::Event* event)
+void setPixelQuintupletOutputBranches(SDL::Event<SDL::Acc>* event)
 {
     // ============ pT5 =============
     SDL::pixelQuintupletsBuffer<alpaka::DevCpu>& pixelQuintupletsInGPU = (*event->getPixelQuintuplets());
@@ -389,7 +389,7 @@ void setPixelQuintupletOutputBranches(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void setQuintupletOutputBranches(SDL::Event* event)
+void setQuintupletOutputBranches(SDL::Event<SDL::Acc>* event)
 {
     SDL::quintupletsBuffer<alpaka::DevCpu>& quintupletsInGPU = (*event->getQuintuplets());
     SDL::objectRangesBuffer<alpaka::DevCpu>& rangesInGPU = (*event->getRanges());
@@ -471,7 +471,7 @@ void setQuintupletOutputBranches(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void setPixelTripletOutputBranches(SDL::Event* event)
+void setPixelTripletOutputBranches(SDL::Event<SDL::Acc>* event)
 {
     SDL::pixelTripletsBuffer<alpaka::DevCpu>& pixelTripletsInGPU = (*event->getPixelTriplets());
     SDL::tripletsBuffer<alpaka::DevCpu>& tripletsInGPU = *(event->getTriplets());
@@ -556,7 +556,7 @@ void setPixelTripletOutputBranches(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void setGnnNtupleBranches(SDL::Event* event)
+void setGnnNtupleBranches(SDL::Event<SDL::Acc>* event)
 {
     // Get relevant information
     SDL::segmentsBuffer<alpaka::DevCpu>& segmentsInGPU = (*event->getSegments());
@@ -648,11 +648,11 @@ void setGnnNtupleBranches(SDL::Event* event)
             std::vector<unsigned int> hits = getHitsFromLS(event, sgIdx);
 
             // Computing line segment pt estimate (assuming beam spot is at zero)
-            SDL::CPU::Hit hitA(0, 0, 0);
-            SDL::CPU::Hit hitB(hitsInGPU.xs[hits[0]], hitsInGPU.ys[hits[0]], hitsInGPU.zs[hits[0]]);
-            SDL::CPU::Hit hitC(hitsInGPU.xs[hits[2]], hitsInGPU.ys[hits[2]], hitsInGPU.zs[hits[2]]);
-            SDL::CPU::Hit center = SDL::CPU::MathUtil::getCenterFromThreePoints(hitA, hitB, hitC);
-            float pt = SDL::CPU::MathUtil::ptEstimateFromRadius(center.rt());
+            SDLMath::Hit hitA(0, 0, 0);
+            SDLMath::Hit hitB(hitsInGPU.xs[hits[0]], hitsInGPU.ys[hits[0]], hitsInGPU.zs[hits[0]]);
+            SDLMath::Hit hitC(hitsInGPU.xs[hits[2]], hitsInGPU.ys[hits[2]], hitsInGPU.zs[hits[2]]);
+            SDLMath::Hit center = SDLMath::getCenterFromThreePoints(hitA, hitB, hitC);
+            float pt = SDLMath::ptEstimateFromRadius(center.rt());
             float eta = hitC.eta();
             float phi = hitB.phi();
 
@@ -685,7 +685,7 @@ void setGnnNtupleBranches(SDL::Event* event)
             sg_index_map[sgIdx] = ana.tx->getBranch<vector<int>>("LS_isFake").size() - 1;
 
             // // T5 eta and phi are computed using outer and innermost hits
-            // SDL::CPU::Hit hitA(trk.ph2_x()[anchitidx], trk.ph2_y()[anchitidx], trk.ph2_z()[anchitidx]);
+            // SDLMath::Hit hitA(trk.ph2_x()[anchitidx], trk.ph2_y()[anchitidx], trk.ph2_z()[anchitidx]);
             // const float phi = hitA.phi();
             // const float eta = hitA.eta();
 
@@ -707,7 +707,7 @@ void setGnnNtupleBranches(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void setGnnNtupleMiniDoublet(SDL::Event* event, unsigned int MD)
+void setGnnNtupleMiniDoublet(SDL::Event<SDL::Acc>* event, unsigned int MD)
 {
     // Get relevant information
     SDL::miniDoubletsBuffer<alpaka::DevCpu>& miniDoubletsInGPU = (*event->getMiniDoublets());
@@ -751,7 +751,7 @@ void setGnnNtupleMiniDoublet(SDL::Event* event, unsigned int MD)
     float pt = hit0_r * k2Rinv1GeVf / sin(dphichange);
 
     // T5 eta and phi are computed using outer and innermost hits
-    SDL::CPU::Hit hitA(trk.ph2_x()[anchitidx], trk.ph2_y()[anchitidx], trk.ph2_z()[anchitidx]);
+    SDLMath::Hit hitA(trk.ph2_x()[anchitidx], trk.ph2_y()[anchitidx], trk.ph2_z()[anchitidx]);
     const float phi = hitA.phi();
     const float eta = hitA.eta();
 
@@ -776,7 +776,7 @@ void setGnnNtupleMiniDoublet(SDL::Event* event, unsigned int MD)
 }
 
 //________________________________________________________________________________________________________________________________
-std::tuple<int, float, float, float, int, vector<int>> parseTrackCandidate(SDL::Event* event, unsigned int idx)
+std::tuple<int, float, float, float, int, vector<int>> parseTrackCandidate(SDL::Event<SDL::Acc>* event, unsigned int idx)
 {
     // Get the type of the track candidate
     SDL::trackCandidatesBuffer<alpaka::DevCpu>& trackCandidatesInGPU = (*event->getTrackCandidates());
@@ -810,7 +810,7 @@ std::tuple<int, float, float, float, int, vector<int>> parseTrackCandidate(SDL::
 }
 
 //________________________________________________________________________________________________________________________________
-std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parsepT5(SDL::Event* event, unsigned int idx)
+std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parsepT5(SDL::Event<SDL::Acc>* event, unsigned int idx)
 {
     // Get relevant information
     SDL::trackCandidatesBuffer<alpaka::DevCpu>& trackCandidatesInGPU = (*event->getTrackCandidates());
@@ -948,7 +948,7 @@ std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> pars
 }
 
 //________________________________________________________________________________________________________________________________
-std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parsepT3(SDL::Event* event, unsigned int idx)
+std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parsepT3(SDL::Event<SDL::Acc>* event, unsigned int idx)
 {
     // Get relevant information
     SDL::trackCandidatesBuffer<alpaka::DevCpu>& trackCandidatesInGPU = (*event->getTrackCandidates());
@@ -996,7 +996,7 @@ std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> pars
 }
 
 //________________________________________________________________________________________________________________________________
-std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parseT5(SDL::Event* event, unsigned int idx)
+std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parseT5(SDL::Event<SDL::Acc>* event, unsigned int idx)
 {
     SDL::trackCandidatesBuffer<alpaka::DevCpu>& trackCandidatesInGPU = (*event->getTrackCandidates());
     SDL::tripletsBuffer<alpaka::DevCpu>& tripletsInGPU = (*event->getTriplets());
@@ -1038,8 +1038,8 @@ std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> pars
     const float pt = (ptAv_in + ptAv_out) / 2.;
 
     // T5 eta and phi are computed using outer and innermost hits
-    SDL::CPU::Hit hitA(trk.ph2_x()[Hit_0], trk.ph2_y()[Hit_0], trk.ph2_z()[Hit_0]);
-    SDL::CPU::Hit hitB(trk.ph2_x()[Hit_8], trk.ph2_y()[Hit_8], trk.ph2_z()[Hit_8]);
+    SDLMath::Hit hitA(trk.ph2_x()[Hit_0], trk.ph2_y()[Hit_0], trk.ph2_z()[Hit_0]);
+    SDLMath::Hit hitB(trk.ph2_x()[Hit_8], trk.ph2_y()[Hit_8], trk.ph2_z()[Hit_8]);
     const float phi = hitA.phi();
     const float eta = hitB.eta();
 
@@ -1050,7 +1050,7 @@ std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> pars
 }
 
 //________________________________________________________________________________________________________________________________
-std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parsepLS(SDL::Event* event, unsigned int idx)
+std::tuple<float, float, float, vector<unsigned int>, vector<unsigned int>> parsepLS(SDL::Event<SDL::Acc>* event, unsigned int idx)
 {
     SDL::trackCandidatesBuffer<alpaka::DevCpu>& trackCandidatesInGPU = (*event->getTrackCandidates());
     SDL::segmentsBuffer<alpaka::DevCpu>& segmentsInGPU = (*event->getSegments());
@@ -1098,7 +1098,7 @@ float computeRadiusFromThreeAnchorHits(float x1, float y1, float x2, float y2, f
 }
 
 //________________________________________________________________________________________________________________________________
-void printHitMultiplicities(SDL::Event* event)
+void printHitMultiplicities(SDL::Event<SDL::Acc>* event)
 {
     SDL::modulesBuffer<alpaka::DevCpu>& modulesInGPU = (*event->getModules());
     SDL::objectRangesBuffer<alpaka::DevCpu>& rangesInGPU = (*event->getRanges());
@@ -1113,7 +1113,7 @@ void printHitMultiplicities(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void printMiniDoubletMultiplicities(SDL::Event* event)
+void printMiniDoubletMultiplicities(SDL::Event<SDL::Acc>* event)
 {
     SDL::miniDoubletsBuffer<alpaka::DevCpu>& miniDoubletsInGPU = (*event->getMiniDoublets());
     SDL::modulesBuffer<alpaka::DevCpu>& modulesInGPU = (*event->getModules());
@@ -1133,7 +1133,7 @@ void printMiniDoubletMultiplicities(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void printAllObjects(SDL::Event* event)
+void printAllObjects(SDL::Event<SDL::Acc>* event)
 {
     printMDs(event);
     printLSs(event);
@@ -1142,7 +1142,7 @@ void printAllObjects(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void printMDs(SDL::Event* event)
+void printMDs(SDL::Event<SDL::Acc>* event)
 {
     SDL::miniDoubletsBuffer<alpaka::DevCpu>& miniDoubletsInGPU = (*event->getMiniDoublets());
     SDL::hitsBuffer<alpaka::DevCpu>& hitsInGPU = (*event->getHits());
@@ -1165,7 +1165,7 @@ void printMDs(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void printLSs(SDL::Event* event)
+void printLSs(SDL::Event<SDL::Acc>* event)
 {
     SDL::segmentsBuffer<alpaka::DevCpu>& segmentsInGPU = (*event->getSegments());
     SDL::miniDoubletsBuffer<alpaka::DevCpu>& miniDoubletsInGPU = (*event->getMiniDoublets());
@@ -1198,7 +1198,7 @@ void printLSs(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void printpLSs(SDL::Event* event)
+void printpLSs(SDL::Event<SDL::Acc>* event)
 {
     SDL::segmentsBuffer<alpaka::DevCpu>& segmentsInGPU = (*event->getSegments());
     SDL::miniDoubletsBuffer<alpaka::DevCpu>& miniDoubletsInGPU = (*event->getMiniDoublets());
@@ -1228,7 +1228,7 @@ void printpLSs(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void printT3s(SDL::Event* event)
+void printT3s(SDL::Event<SDL::Acc>* event)
 {
     SDL::tripletsBuffer<alpaka::DevCpu>& tripletsInGPU = (*event->getTriplets());
     SDL::segmentsBuffer<alpaka::DevCpu>& segmentsInGPU = (*event->getSegments());
@@ -1270,7 +1270,7 @@ void printT3s(SDL::Event* event)
 }
 
 //________________________________________________________________________________________________________________________________
-void debugPrintOutlierMultiplicities(SDL::Event* event)
+void debugPrintOutlierMultiplicities(SDL::Event<SDL::Acc>* event)
 {
     SDL::trackCandidatesBuffer<alpaka::DevCpu>& trackCandidatesInGPU = (*event->getTrackCandidates());
     SDL::tripletsBuffer<alpaka::DevCpu>& tripletsInGPU = (*event->getTriplets());

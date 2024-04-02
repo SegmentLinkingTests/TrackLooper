@@ -1,4 +1,5 @@
 #include "trkCore.h"
+#include "Globals.h"
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
 void loadMaps()
@@ -7,11 +8,11 @@ void loadMaps()
     TString TrackLooperDir = gSystem->Getenv("TRACKLOOPERDIR");
 
     // Module orientation information (DrDz or phi angles)
-    TString endcap_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/endcap_orientation_data_CMSSW_12_2_0_pre2.txt", TrackLooperDir.Data()).Data());
-    TString tilted_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/tilted_orientation_data_CMSSW_12_2_0_pre2.txt", TrackLooperDir.Data()).Data());
-    TString mappath = get_absolute_path_after_check_file_exists(TString::Format("%s/data/module_connection_tracing_CMSSW_12_2_0_pre2_merged.txt", TrackLooperDir.Data()).Data());
-    TString centroid = get_absolute_path_after_check_file_exists(TString::Format("%s/data/centroid_CMSSW_12_2_0_pre2.txt", gSystem->Getenv("TRACKLOOPERDIR")).Data()).Data();
-    TString pLSMapDir = TrackLooperDir+"/data/pixelmaps_CMSSW_12_2_0_pre2_0p8minPt";
+    TString endcap_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/endcap_orientation.txt", TrackLooperDir.Data()).Data());
+    TString tilted_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/tilted_barrel_orientation.txt", TrackLooperDir.Data()).Data());
+    TString mappath = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/module_connection_tracing_merged.txt", TrackLooperDir.Data()).Data());
+    TString centroid = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/sensor_centroids.txt", gSystem->Getenv("TRACKLOOPERDIR")).Data()).Data();
+    TString pLSMapDir = TrackLooperDir+"/data/OT800_IT615_pt0.8/pixelmap";
 
     std::cout << "============ CMSSW_12_2_0_pre2 geometry ===========" << std::endl;
     std::cout << "endcap geometry: " << endcap_geom << std::endl;
@@ -20,24 +21,32 @@ void loadMaps()
     std::cout << "pLS map: " << pLSMapDir << std::endl;
     std::cout << "centroid: " << centroid << std::endl;
 
-    SDL::endcapGeometry->load(endcap_geom.Data()); // centroid values added to the map
-    SDL::tiltedGeometry.load(tilted_geom.Data());
-    SDL::moduleConnectionMap.load(mappath.Data());
+    SDL::Globals<SDL::Dev>::endcapGeometry->load(endcap_geom.Data()); // centroid values added to the map
+    SDL::Globals<SDL::Dev>::tiltedGeometry.load(tilted_geom.Data());
+    SDL::Globals<SDL::Dev>::moduleConnectionMap.load(mappath.Data());
 
-    vector<string> pLSMapPath{ "layer1_subdet5", "layer2_subdet5", "layer1_subdet4", "layer2_subdet4" };
+    SDL::MapPLStoLayer pLStoLayer;
+    const std::array<string, 4> pLSMapPath{{ "layer1_subdet5", "layer2_subdet5", "layer1_subdet4", "layer2_subdet4" }};
+    static_assert(pLStoLayer[0].size() == pLSMapPath.size());
     for (unsigned int i=0; i<pLSMapPath.size(); i++) {
         TString path = TString::Format("%s/pLS_map_%s.txt", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
-        SDL::moduleConnectionMap_pLStoLayer[i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
+        pLStoLayer[0][i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
 
         path = TString::Format("%s/pLS_map_pos_%s.txt", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
-        SDL::moduleConnectionMap_pLStoLayer_pos[i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
+        pLStoLayer[1][i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
 
         path = TString::Format("%s/pLS_map_neg_%s.txt", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
-        SDL::moduleConnectionMap_pLStoLayer_neg[i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
+        pLStoLayer[2][i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
     }
 
     // WARNING: initModules must come after above load commands!! keep it at the last line here!
-    SDL::initModules(centroid.Data());
+    if (SDL::Globals<SDL::Dev>::modulesBuffers == nullptr) {
+      SDL::Globals<SDL::Dev>::modulesBuffers = new SDL::modulesBuffer<SDL::Dev>(SDL::devAcc);
+    }
+    if (SDL::Globals<SDL::Dev>::pixelMapping == nullptr) {
+      SDL::Globals<SDL::Dev>::pixelMapping = std::make_shared<SDL::pixelMap>();
+    }
+    SDL::Event<SDL::Acc>::initModules(pLStoLayer, centroid.Data());
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
@@ -62,7 +71,7 @@ bool goodEvent()
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runMiniDoublet(SDL::Event *event, int evt)
+float runMiniDoublet(SDL::Event<SDL::Acc> *event, int evt)
 {
     TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco Mini-Doublet start " << evt << std::endl;
@@ -90,7 +99,7 @@ float runMiniDoublet(SDL::Event *event, int evt)
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runSegment(SDL::Event* event)
+float runSegment(SDL::Event<SDL::Acc>* event)
 {
     TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco Segment start" << std::endl;
@@ -117,7 +126,7 @@ float runSegment(SDL::Event* event)
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runT3(SDL::Event* event)
+float runT3(SDL::Event<SDL::Acc>* event)
 {
     TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco T3 start" << std::endl;
@@ -145,7 +154,7 @@ float runT3(SDL::Event* event)
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runpT3(SDL::Event* event)
+float runpT3(SDL::Event<SDL::Acc>* event)
 {
     TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco Pixel Triplet pT3 start" << std::endl;
@@ -159,13 +168,13 @@ float runpT3(SDL::Event* event)
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runTrackCandidate(SDL::Event* event)
+float runTrackCandidate(SDL::Event<SDL::Acc>* event)
 {
     return runTrackCandidateTest_v2(event);
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runQuintuplet(SDL::Event* event)
+float runQuintuplet(SDL::Event<SDL::Acc>* event)
 {
      TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco Quintuplet start" << std::endl;
@@ -192,7 +201,7 @@ float runQuintuplet(SDL::Event* event)
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runPixelLineSegment(SDL::Event* event)
+float runPixelLineSegment(SDL::Event<SDL::Acc>* event)
 {
     TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco Pixel Line Segment start" << std::endl;
@@ -205,7 +214,7 @@ float runPixelLineSegment(SDL::Event* event)
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runPixelQuintuplet(SDL::Event* event)
+float runPixelQuintuplet(SDL::Event<SDL::Acc>* event)
 {
     TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco Pixel Quintuplet start" << std::endl;
@@ -219,7 +228,7 @@ float runPixelQuintuplet(SDL::Event* event)
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float runTrackCandidateTest_v2(SDL::Event* event)
+float runTrackCandidateTest_v2(SDL::Event<SDL::Acc>* event)
 {
     TStopwatch my_timer;
     if (ana.verbose >= 2) std::cout << "Reco TrackCandidate start" << std::endl;
@@ -278,9 +287,9 @@ std::vector<int> matchedSimTrkIdxs(std::vector<unsigned int> hitidxs, std::vecto
     }
 
     std::vector<std::pair<unsigned int, unsigned int>> to_check_duplicate;
-    for (auto &&[ihit, ihitdata] : iter::enumerate(iter::zip(hitidxs, hittypes)))
-    {
-        auto &&[hitidx, hittype] = ihitdata;
+    for (size_t i = 0; i < hitidxs.size(); ++i) {
+        auto hitidx = hitidxs[i];
+        auto hittype = hittypes[i];
         auto item = std::make_pair(hitidx, hittype);
         if (std::find(to_check_duplicate.begin(), to_check_duplicate.end(), item) == to_check_duplicate.end())
         {
@@ -299,8 +308,8 @@ std::vector<int> matchedSimTrkIdxs(std::vector<unsigned int> hitidxs, std::vecto
                   << "------------------------" << std::endl;
     }
 
-    for (auto &&[ihit, ihitdata] : iter::enumerate(to_check_duplicate))
-    {
+    for (size_t ihit = 0; ihit < to_check_duplicate.size(); ++ihit) {
+        auto ihitdata = to_check_duplicate[ihit];
         auto &&[hitidx, hittype] = ihitdata;
 
         if (verbose)
@@ -680,7 +689,7 @@ void addInputsToLineSegmentTrackingPreLoad(std::vector<std::vector<float>> &out_
     std::iota(hitIdxs.begin(), hitIdxs.end(), 0);
     const int hit_size = trkX.size();
 
-    for (auto &&[iSeed, _] : iter::enumerate(trk.see_stateTrajGlbPx()))
+    for (size_t iSeed = 0; iSeed < trk.see_stateTrajGlbPx().size(); ++iSeed)
     {
 
         //// track algorithm; partial copy from TrackBase.h
@@ -849,7 +858,7 @@ void addInputsToLineSegmentTrackingPreLoad(std::vector<std::vector<float>> &out_
             isQuad_vec.push_back(isQuad);
         }
 
-    } // iter::enumerate(trk.see_stateTrajGlbPx
+    }
 
     out_trkX.push_back(trkX);
     out_trkY.push_back(trkY);
@@ -881,7 +890,7 @@ void addInputsToLineSegmentTrackingPreLoad(std::vector<std::vector<float>> &out_
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-float addInputsToEventPreLoad(SDL::Event* event,
+float addInputsToEventPreLoad(SDL::Event<SDL::Acc>* event,
                               bool useOMP,
                               std::vector<float> trkX,
                               std::vector<float> trkY,
@@ -970,8 +979,9 @@ void printTimingInformation(std::vector<std::vector<float>>& timing_information,
     std::vector<float> timing_sum_information(timing_information[0].size());
     std::vector<float> timing_shortlist;
     std::vector<float> timing_list;
-    for (auto &&[ievt, timing] : iter::enumerate(timing_information))
+    for (size_t ievt = 0; ievt < timing_information.size(); ++ievt)
     {
+        auto timing = timing_information[ievt];
         float timing_total = 0.f;
         float timing_total_short = 0.f;
         timing_total += timing[0] * 1000;       // Hits
@@ -1213,7 +1223,7 @@ void writeMetaData()
 
 //__________________________________________________________________________________________
 [[deprecated]]
-float addInputsToLineSegmentTracking(SDL::Event &event, bool useOMP)
+float addInputsToLineSegmentTracking(SDL::Event<SDL::Acc> &event, bool useOMP)
 {
 
     TStopwatch my_timer;
@@ -1247,7 +1257,7 @@ float addInputsToLineSegmentTracking(SDL::Event &event, bool useOMP)
     std::iota(hitIdxs.begin(), hitIdxs.end(), 0);
     const int hit_size = trkX.size();
 
-    for (auto &&[iSeed, _] : iter::enumerate(trk.see_stateTrajGlbPx()))
+    for (size_t iSeed = 0; iSeed < trk.see_stateTrajGlbPx().size(); ++iSeed)
     {
         bool good_seed_type = false;
         if (trk.see_algo()[iSeed] == 4) good_seed_type = true;
@@ -1419,7 +1429,7 @@ float addInputsToLineSegmentTracking(SDL::Event &event, bool useOMP)
 
 //__________________________________________________________________________________________
 [[deprecated]]
-float addInputsToLineSegmentTrackingUsingExplicitMemory(SDL::Event &event)
+float addInputsToLineSegmentTrackingUsingExplicitMemory(SDL::Event<SDL::Acc> &event)
 {
     return addInputsToLineSegmentTracking(event, true);
 }
