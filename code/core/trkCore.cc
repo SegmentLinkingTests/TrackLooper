@@ -2,16 +2,16 @@
 #include "Globals.h"
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
-void loadMaps()
+void loadMaps(SDL::Dev& devAccIn, SDL::QueueAcc& queue)
 {
     // From the environment variable figure out the main tracklooper absolute path
     TString TrackLooperDir = gSystem->Getenv("TRACKLOOPERDIR");
 
     // Module orientation information (DrDz or phi angles)
-    TString endcap_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/endcap_orientation.txt", TrackLooperDir.Data()).Data());
-    TString tilted_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/tilted_barrel_orientation.txt", TrackLooperDir.Data()).Data());
-    TString mappath = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/module_connection_tracing_merged.txt", TrackLooperDir.Data()).Data());
-    TString centroid = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/sensor_centroids.txt", gSystem->Getenv("TRACKLOOPERDIR")).Data()).Data();
+    TString endcap_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/endcap_orientation.bin", TrackLooperDir.Data()).Data());
+    TString tilted_geom = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/tilted_barrel_orientation.bin", TrackLooperDir.Data()).Data());
+    TString mappath = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/module_connection_tracing_merged.bin", TrackLooperDir.Data()).Data());
+    TString centroid = get_absolute_path_after_check_file_exists(TString::Format("%s/data/OT800_IT615_pt0.8/sensor_centroids.bin", gSystem->Getenv("TRACKLOOPERDIR")).Data()).Data();
     TString pLSMapDir = TrackLooperDir+"/data/OT800_IT615_pt0.8/pixelmap";
 
     std::cout << "============ CMSSW_12_2_0_pre2 geometry ===========" << std::endl;
@@ -21,7 +21,9 @@ void loadMaps()
     std::cout << "pLS map: " << pLSMapDir << std::endl;
     std::cout << "centroid: " << centroid << std::endl;
 
-    SDL::Globals<SDL::Dev>::endcapGeometry->load(endcap_geom.Data()); // centroid values added to the map
+    if (SDL::Globals<SDL::Dev>::endcapGeometry == nullptr) {
+      SDL::Globals<SDL::Dev>::endcapGeometry = new SDL::EndcapGeometry<SDL::Dev>(devAccIn, queue, endcap_geom.Data()); // centroid values added to the map
+    }
     SDL::Globals<SDL::Dev>::tiltedGeometry.load(tilted_geom.Data());
     SDL::Globals<SDL::Dev>::moduleConnectionMap.load(mappath.Data());
 
@@ -29,24 +31,24 @@ void loadMaps()
     const std::array<string, 4> pLSMapPath{{ "layer1_subdet5", "layer2_subdet5", "layer1_subdet4", "layer2_subdet4" }};
     static_assert(pLStoLayer[0].size() == pLSMapPath.size());
     for (unsigned int i=0; i<pLSMapPath.size(); i++) {
-        TString path = TString::Format("%s/pLS_map_%s.txt", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
+        TString path = TString::Format("%s/pLS_map_%s.bin", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
         pLStoLayer[0][i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
 
-        path = TString::Format("%s/pLS_map_pos_%s.txt", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
+        path = TString::Format("%s/pLS_map_pos_%s.bin", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
         pLStoLayer[1][i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
 
-        path = TString::Format("%s/pLS_map_neg_%s.txt", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
+        path = TString::Format("%s/pLS_map_neg_%s.bin", pLSMapDir.Data(), pLSMapPath[i].c_str()).Data();
         pLStoLayer[2][i].load( get_absolute_path_after_check_file_exists( path.Data() ).Data() );
     }
 
     // WARNING: initModules must come after above load commands!! keep it at the last line here!
     if (SDL::Globals<SDL::Dev>::modulesBuffers == nullptr) {
-      SDL::Globals<SDL::Dev>::modulesBuffers = new SDL::modulesBuffer<SDL::Dev>(SDL::devAcc);
+      SDL::Globals<SDL::Dev>::modulesBuffers = new SDL::modulesBuffer<SDL::Dev>(devAccIn);
     }
     if (SDL::Globals<SDL::Dev>::pixelMapping == nullptr) {
       SDL::Globals<SDL::Dev>::pixelMapping = std::make_shared<SDL::pixelMap>();
     }
-    SDL::Event<SDL::Acc>::initModules(pLStoLayer, centroid.Data());
+    SDL::Event<SDL::Acc>::initModules(queue, pLStoLayer, centroid.Data());
 }
 
 //___________________________________________________________________________________________________________________________________________________________________________________________
